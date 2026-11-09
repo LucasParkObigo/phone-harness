@@ -16,7 +16,7 @@ Add this object to the `plugins` array in `.grok-plugin/marketplace.json`. Do no
   "source": {
     "source": "url",
     "url": "https://github.com/phone-harness/phone-harness.git",
-    "sha": "ade0bad1ab54fe28b659eb9440597a887020b782",
+    "sha": "d1416d89cd0f521ee8d56a4b242a8082fb691e21",
     "path": "integrations/grok-build"
   },
   "homepage": "https://phone-harness.com",
@@ -37,7 +37,7 @@ Add this object to the `plugins` array in `.grok-plugin/marketplace.json`. Do no
 
 The same object is in [marketplace-entry.json](marketplace-entry.json).
 
-`sha` is `ade0bad1ab54fe28b659eb9440597a887020b782`, the commit that contains the plugin files this entry describes (`integrations/grok-build` without this `submission/` directory). Grok Build checks `git rev-parse HEAD` against that pin after clone.
+`sha` is `d1416d89cd0f521ee8d56a4b242a8082fb691e21`, the commit that contains the plugin files this entry describes (`integrations/grok-build` without this `submission/` directory). Grok Build checks `git rev-parse HEAD` against that pin after clone.
 
 ## Re-pin before opening the catalog PR
 

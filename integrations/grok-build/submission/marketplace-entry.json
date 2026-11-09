@@ -5,7 +5,7 @@
   "source": {
     "source": "url",
     "url": "https://github.com/phone-harness/phone-harness.git",
-    "sha": "ade0bad1ab54fe28b659eb9440597a887020b782",
+    "sha": "d1416d89cd0f521ee8d56a4b242a8082fb691e21",
     "path": "integrations/grok-build"
   },
   "homepage": "https://phone-harness.com",
