@@ -28,14 +28,18 @@ grok plugin install phone-harness --trust
 
 Or open `/marketplace` in Grok Build and install **phone-harness**.
 
-To load this directory from a checkout before it is listed:
+From a checkout, before it is listed, install this directory. On Grok 1.0.77
+this is the command that works:
 
 ```bash
-grok --plugin-dir /path/to/phone-harness/integrations/grok-build
+grok plugin install ./integrations/grok-build --trust
 ```
 
-`--plugin-dir` is the documented way to load a plugin directory. Installing
-Grok Build and loading this directory does not publish the plugin.
+`--trust` skips the confirmation prompt. Installing the directory does not
+publish the plugin. Grok 1.0.77 rejects `--plugin-dir` on `grok` itself
+(`unexpected argument '--plugin-dir'`). That option is only on
+`grok agent --no-leader --plugin-dir <dir> stdio`, which loads the directory
+for one process and is not the install command.
 
 A cloud call on the MCP path needs Phone Harness Cloud sign-in. Grok runs
 its MCP OAuth flow in the browser. Approve it with the account whose cloud

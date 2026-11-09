@@ -177,7 +177,7 @@ class Readme(unittest.TestCase):
     def test_install_auth_network_and_license(self):
         for phrase in (
             "grok plugin install phone-harness --trust",
-            "--plugin-dir",
+            "grok plugin install ./integrations/grok-build --trust",
             "phone:drive",
             "https://mcp.phone-harness.com/mcp",
             "https://mcp.phone-harness.com/.well-known/oauth-protected-resource/mcp",
@@ -198,6 +198,10 @@ class Readme(unittest.TestCase):
     def test_does_not_tell_the_reader_to_pipe_an_installer(self):
         self.assertNotIn("curl | bash", self.text)
         self.assertNotIn("curl -fsSL", self.text)
+
+    def test_does_not_offer_the_rejected_plugin_dir_flag(self):
+        self.assertNotIn("grok --plugin-dir", self.text)
+        self.assertIn("grok agent --no-leader --plugin-dir <dir> stdio", self.text)
 
     def test_root_readme_points_here(self):
         root = (ROOT / "README.md").read_text(encoding="utf-8")
