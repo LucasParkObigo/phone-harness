@@ -1,26 +1,19 @@
 # Phone Harness for Grok Build
 
-A [Grok Build](https://x.ai/build) plugin that lets Grok drive a **Phone Harness
-Cloud** phone through the hosted MCP server at `https://mcp.phone-harness.com/mcp`.
-Grok can list phones, start one, read the screen, tap, type, swipe, and open apps.
+A [Grok Build](https://x.ai/build) plugin with two paths, the same shape as
+Browser Use's Grok plugin: a hosted MCP server, and the real CLI through
+Grok's shell. It does not register `phone_exec` and it does not add a
+shell-exec MCP. `.mcp.json` is only the hosted HTTP server.
 
-This is the Grok Build plugin catalog format (a directory of skills plus
-`.mcp.json`). It is not a `phone_exec` tool. Hermes and OpenClaw run model-written
-Python on the machine that hosts the agent, and that Python can reach a personal
-iPhone or a desk Android. This plugin does not.
-
-## What it can drive
-
-| Phone | Through this plugin |
+| Phone | Path |
 | --- | --- |
-| Cloud Android emulator | Yes. Metered while the session is up (the hosted server describes this as 5 cents a minute). |
-| Cloud iPhone | Yes. A flat monthly subscription, not a per-minute charge. A different device from the iPhone in someone's pocket. |
-| Personal iPhone (iPhone Mirroring) | No. Use the Phone Harness CLI, or the Hermes or OpenClaw plugin, on a Mac. |
-| Android on the desk (adb) | No. Same as above: the CLI or those plugins, on the machine the phone is plugged into. |
+| Cloud Android emulator or Cloud iPhone, MCP connected | Hosted MCP. Preferred. Metered Android is 5 cents a minute on that server. A Cloud iPhone is a flat subscription, and it is not the phone in someone's pocket. |
+| Personal iPhone (iPhone Mirroring) | `phone-harness` in Grok's shell. The hosted MCP cannot see it. |
+| Android on the desk (adb) | `phone-harness` in Grok's shell. The hosted MCP cannot see it. |
+| Cloud phone, only after the user explicitly chooses the CLI | `phone-harness cloud` in Grok's shell. Not a silent fallback when MCP auth or a bash prompt fails. |
 
-The hosted server is cloud-only today. Local iPhone and Android control is a
-separate effort and is not part of this plugin. There is no local fallback and
-no stdio server in `.mcp.json`.
+Do not switch an action onto a different phone or the other path because a
+call failed. Ask mode prompts before bash. A deny stops that action.
 
 ## Install
 
@@ -44,9 +37,16 @@ grok --plugin-dir /path/to/phone-harness/integrations/grok-build
 `--plugin-dir` is the documented way to load a plugin directory. Installing
 Grok Build and loading this directory does not publish the plugin.
 
-The first phone call needs a Phone Harness Cloud sign-in. Grok runs its MCP
-OAuth flow in the browser. Approve it with the account whose cloud phones Grok
-should drive. Do not paste an API key into the chat.
+A cloud call on the MCP path needs Phone Harness Cloud sign-in. Grok runs
+its MCP OAuth flow in the browser. Approve it with the account whose cloud
+phones Grok should drive. Do not paste an API key into the chat.
+
+A local phone needs the `phone-harness` command on the machine running Grok
+(or `uvx --from phone-harness==0.3.3 phone-harness` when it is not installed).
+A personal iPhone also needs macOS 15+, iPhone Mirroring, and Accessibility
+and Screen Recording for the app that runs that command. A desk Android needs
+adb. CLI cloud, if the user explicitly chooses it, uses `phone-harness cloud
+login` instead of the MCP OAuth flow.
 
 ## Authentication
 
@@ -77,31 +77,43 @@ account. Anyone who can use the key can drive that account's cloud phones.
 
 ## Network
 
-The plugin ships no code. Grok's MCP client, because of `.mcp.json` and the
-OAuth discovery above, talks to:
+The plugin ships no code. What talks to the network depends on the path.
+
+Hosted MCP, because of `.mcp.json` and OAuth discovery:
 
 | Host | Why |
 | --- | --- |
 | `mcp.phone-harness.com` | The hosted MCP (`/mcp`) and its protected-resource metadata. |
-| `clerk.phone-harness.com` | Sign-in. Authorize, token, registration, and revocation endpoints. |
-| `https://api.phone-harness.com` | Not called by the plugin. The hosted MCP calls it with the user's bearer to list sessions and run phone operations. |
-| `phone-harness.com` | The product and dashboard. The skill sends the user here to take over for a PIN, password, or 2FA prompt. The plugin does not fetch it. |
+| `clerk.phone-harness.com` | MCP sign-in. Authorize, token, registration, and revocation endpoints. |
+| `https://api.phone-harness.com` | Not called by the plugin. The hosted MCP calls it with the user's bearer. |
+| `phone-harness.com` | Dashboard for a PIN, password, or 2FA handoff on the MCP path. The plugin does not fetch it. |
 
-A Cloud Android's adb session stays inside Phone Harness Cloud. Grok's machine
-does not open an adb port. A Cloud iPhone is driven over HTTPS by the hosted
-server, not by this computer.
+On that path a Cloud Android's adb session stays inside Phone Harness Cloud.
+Grok's machine does not open an adb port.
 
-No other hosts are declared. There is no telemetry client in this plugin, and
-it does not run the Phone Harness CLI (whose CLI telemetry is a separate
-setting). Phone Harness Cloud still records the cloud sessions the account
-starts.
+CLI path, only after Grok's bash tool is allowed to run `phone-harness`:
+
+| Host | Why |
+| --- | --- |
+| none for a mirrored iPhone | The CLI uses the local mirroring window. |
+| the desk phone's adb address | USB or Wi-Fi debugging. Not a Phone Harness host. |
+| `https://api.phone-harness.com` and `https://clerk.phone-harness.com` | Only if the user explicitly chose CLI cloud (`cloud login` and `cloud start`). |
+| the cloud Android's adb host and port | Outbound TCP from the machine running the CLI. The unlock code is a secret. The skill tells the model not to print it. |
+
+The plugin adds no telemetry. The CLI, when it runs, follows its own setting
+and by default sends usage, including scripts and what they print, to PostHog
+at `https://us.i.posthog.com`. `DO_NOT_TRACK=1` or `phone-harness config set
+telemetry false` turns that off. Phone Harness Cloud still records cloud
+sessions the account starts.
 
 ## Least privilege
 
 - One remote MCP server. No `command`, no stdio, no args, no hooked shell.
+  The CLI is not launched by `.mcp.json`. Grok's own bash tool runs it, and
+  Ask mode prompts first.
 - No hooks, no agents, no slash-command scripts, no LSP, no filesystem tools.
-- No `phone_exec`. The model does not get a Python or shell runner from this
-  plugin.
+- The plugin does not register `phone_exec`. Hermes and OpenClaw do. Do not
+  switch paths to imitate that tool.
 - `phone_save_screenshot` writes a file on the machine running a local stdio
   server. Hosted mode does not register it, and this plugin does not run that
   server.
@@ -118,10 +130,10 @@ to stop it when the task is done.
 ## Skill
 
 `skills/phone-harness/SKILL.md` is generated from the repo-root
-[SKILL.md](../../SKILL.md). The root file remains the only copy of the consent
-rule, the scroll-versus-swipe distinction, and the personal-phone versus
-cloud-phone rule. The generated skill maps those rules onto the hosted MCP
-tools and states the limits above. Rebuild it after changing the root guide:
+[SKILL.md](../../SKILL.md). The root file remains the only copy of the helpers,
+the consent rule, the scroll-versus-swipe distinction, and the personal-phone
+versus cloud-phone rule. The generated skill puts the Grok routing preface in
+front of that guide. Rebuild it after changing the root guide:
 
 ```bash
 python3 integrations/grok-build/scripts/build-skill.py

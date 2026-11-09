@@ -1,7 +1,7 @@
 {
   "name": "phone-harness",
-  "version": "0.1.0",
-  "description": "Drive a Phone Harness Cloud Android emulator or Cloud iPhone from Grok Build through the hosted Phone Harness MCP server. A personal iPhone and a desk Android are not reachable here.",
+  "version": "0.2.0",
+  "description": "Drive a Phone Harness phone from Grok Build. Hosted MCP for a Cloud Android or Cloud iPhone. The phone-harness CLI, through Grok's shell, for a mirrored iPhone, an Android over adb, or cloud when the user explicitly chooses that path.",
   "author": {
     "name": "Phone Harness",
     "url": "https://phone-harness.com"

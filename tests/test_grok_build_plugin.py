@@ -48,9 +48,10 @@ class Manifest(unittest.TestCase):
         self.assertEqual(data["homepage"], "https://phone-harness.com")
         self.assertEqual(data["repository"], "https://github.com/phone-harness/phone-harness")
         self.assertEqual(data["author"]["name"], "Phone Harness")
-        self.assertTrue(data["version"])
-        self.assertIn("Cloud", data["description"])
-        self.assertIn("not reachable", data["description"])
+        self.assertEqual(data["version"], "0.2.0")
+        self.assertIn("CLI", data["description"])
+        self.assertIn("Hosted MCP", data["description"])
+        self.assertNotIn("not reachable", data["description"])
 
     def test_keywords_are_brand_scoped(self):
         words = manifest()["keywords"]
@@ -106,7 +107,9 @@ class SkillSync(unittest.TestCase):
         self.assertIn("user-invocable: true\n", front)
         description = re.search(r'^description: "(.*)"$', front, re.M).group(1)
         self.assertLessEqual(len(description), 120)
-        self.assertIn("Cloud phones only", description)
+        self.assertIn("Hosted MCP", description)
+        self.assertIn("CLI", description)
+        self.assertNotIn("Cloud phones only", description)
 
     def test_quotes_the_root_rules_it_depends_on(self):
         found = self.builder.excerpts(self.guide)
@@ -114,24 +117,39 @@ class SkillSync(unittest.TestCase):
             self.assertIn(body, self.skill)
             self.assertIn(body, self.guide)
 
+    def test_the_cli_guide_is_appended_verbatim(self):
+        body = self.builder.guide_body(self.guide)
+        self.assertTrue(self.skill.endswith(body))
+        preface = self.skill[: -len(body)]
+        self.assertIn("## CLI guide\n", preface)
+        self.assertNotIn("# phone-harness\n", preface)
+
     def test_lists_every_hosted_tool_and_not_the_stdio_one(self):
         for name in self.builder.HOSTED_TOOLS:
             self.assertIn(f"`{name}`", self.skill)
+            self.assertIn(f"`phone-harness__{name}`", self.skill)
         self.assertEqual(len(self.builder.HOSTED_TOOLS), 14)
         self.assertNotIn("phone_save_screenshot", self.builder.HOSTED_TOOLS)
-        tools = self.skill.split("## Tools\n", 1)[1]
-        self.assertNotIn("phone_save_screenshot", tools)
-        self.assertIn("`phone_save_screenshot` exists", self.skill)
-        self.assertIn("local stdio server", self.skill)
+        block = self.skill.split("## MCP tools (preferred when connected)\n", 1)[1]
+        block = block.split("## CLI in Grok's shell\n", 1)[0]
+        bullets = [line.split("`")[1] for line in block.splitlines() if line.startswith("- `phone_")]
+        self.assertEqual(bullets, list(self.builder.HOSTED_TOOLS))
+        self.assertIn("local stdio MCP", block)
 
-    def test_refuses_local_phones_and_phone_exec(self):
-        self.assertIn("no `phone_exec` tool", self.skill)
+    def test_routes_mcp_and_cli_without_switching_phones(self):
+        self.assertIn("MCP tools (preferred when connected)", self.skill)
+        self.assertIn("CLI in Grok's shell", self.skill)
+        self.assertIn("phone-harness <<'PY'", self.skill)
         self.assertIn("iPhone Mirroring", self.skill)
         self.assertIn("desk over adb", self.skill)
-        self.assertNotIn("phone-harness <<", self.skill)
+        self.assertIn("explicitly chooses", self.skill)
+        self.assertIn("Do not switch", self.skill)
+        self.assertIn(f"phone-harness=={self.builder.cli_version()}", self.skill)
+        self.assertNotIn("no shell tool", self.skill)
+        self.assertNotIn("Do not run `phone-harness`", self.skill)
         self.assertNotIn("provides_tools", self.skill)
-        # The denial is the only mention. No schema, no call example.
         self.assertEqual(self.skill.count("phone_exec"), 1)
+        self.assertIn("does not register a `phone_exec` tool", self.skill)
 
     def test_units_that_differ_from_the_cli_are_stated(self):
         self.assertIn("milliseconds", self.skill)
@@ -169,7 +187,9 @@ class Readme(unittest.TestCase):
             "MIT",
             "iPhone Mirroring",
             "desk",
-            "No `phone_exec`",
+            "does not register `phone_exec`",
+            "Grok's shell",
+            "Do not switch",
             "5 cents",
             "b0572ff90388c8e62e17fe08484a072eb594ccf6",
         ):
@@ -191,8 +211,13 @@ class Secrets(unittest.TestCase):
             if not path.is_file():
                 continue
             raw = path.read_bytes()
-            for needle in (b"phc_", b"pck_", b"sk-", b"BEGIN ", b"AKIA"):
+            for needle in (b"phc_", b"pck_", b"BEGIN ", b"AKIA"):
                 self.assertNotIn(needle, raw, f"{needle!r} in {path.relative_to(ROOT)}")
+            # "task-specific" contains the letters sk-; a real token does not sit inside a word.
+            self.assertIsNone(
+                re.search(br"(?<![A-Za-z])sk-[A-Za-z0-9]", raw),
+                f"sk- token in {path.relative_to(ROOT)}",
+            )
 
 
 class Layout(unittest.TestCase):
@@ -262,7 +287,9 @@ class CatalogEntry(unittest.TestCase):
         self.assertEqual(self.entry["source"]["url"], "https://github.com/phone-harness/phone-harness.git")
         self.assertEqual(self.entry["source"]["path"], "integrations/grok-build")
         self.assertEqual(self.entry["category"], "development")
-        self.assertTrue(self.entry["description"])
+        self.assertIn("CLI", self.entry["description"])
+        self.assertIn("MCP", self.entry["description"])
+        self.assertNotIn("not reachable", self.entry["description"])
         self.assertTrue(self.entry["homepage"])
 
     def test_keywords_and_domains_stay_on_the_brand(self):
