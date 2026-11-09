@@ -11,12 +11,12 @@ Add this object to the `plugins` array in `.grok-plugin/marketplace.json`. Do no
 ```json
 {
   "name": "phone-harness",
-  "description": "Drive a Phone Harness Cloud Android emulator or Cloud iPhone from Grok Build through the hosted Phone Harness MCP server. See the screen, tap, type, and open apps. A personal iPhone and a desk Android are not reachable from this plugin.",
+  "description": "Drive a Phone Harness phone from Grok Build. Hosted OAuth MCP for a Cloud Android or Cloud iPhone. The phone-harness CLI, through Grok's shell, for a mirrored iPhone, an Android over adb, or cloud when the user explicitly chooses that path.",
   "category": "development",
   "source": {
     "source": "url",
     "url": "https://github.com/phone-harness/phone-harness.git",
-    "sha": "071628f0c645dfd3deaeaa9539e1c889f02494ab",
+    "sha": "ade0bad1ab54fe28b659eb9440597a887020b782",
     "path": "integrations/grok-build"
   },
   "homepage": "https://phone-harness.com",
@@ -37,7 +37,7 @@ Add this object to the `plugins` array in `.grok-plugin/marketplace.json`. Do no
 
 The same object is in [marketplace-entry.json](marketplace-entry.json).
 
-`sha` is `071628f0c645dfd3deaeaa9539e1c889f02494ab`, the commit that contains the plugin files this entry describes (`integrations/grok-build` without this `submission/` directory). Grok Build checks `git rev-parse HEAD` against that pin after clone.
+`sha` is `ade0bad1ab54fe28b659eb9440597a887020b782`, the commit that contains the plugin files this entry describes (`integrations/grok-build` without this `submission/` directory). Grok Build checks `git rev-parse HEAD` against that pin after clone.
 
 ## Re-pin before opening the catalog PR
 
@@ -73,7 +73,7 @@ Index generation fetches the pinned commit from GitHub. The commit must already 
 
 ```json
 {
-  "version": "0.1.0",
+  "version": "0.2.0",
   "components": {
     "mcpServers": [
       { "name": "phone-harness", "description": "http" }
@@ -81,7 +81,7 @@ Index generation fetches the pinned commit from GitHub. The commit must already 
     "skills": [
       {
         "name": "phone-harness",
-        "description": "Drive a Phone Harness Cloud Android or Cloud iPhone. Cloud phones only, via the hosted MCP."
+        "description": "Hosted MCP for Phone Harness Cloud, or the phone-harness CLI for a local iPhone or Android."
       }
     ]
   }
@@ -92,11 +92,11 @@ The generated index record for a url source also stores `sha`. Keys and skill or
 
 ## Security checklist for the catalog PR
 
-- No `curl | bash`, remote-code download, or postinstall.
+- No `curl | bash`, remote-code download, or postinstall. The skill's uvx fallback names `phone-harness==0.3.3`. It is not a plugin postinstall.
 - No reading or exfiltration of secrets, tokens, `.env`, or environment variables. The plugin has no executable code.
-- No hooks. One HTTP MCP server, `https://mcp.phone-harness.com/mcp`, no stdio command.
-- Network endpoints: `mcp.phone-harness.com` (MCP and OAuth protected-resource metadata), `clerk.phone-harness.com` (sign-in), and, from the hosted server rather than from this plugin, `api.phone-harness.com`.
-- Credentials: OAuth scope `phone:drive` for the user's own Phone Harness Cloud account, or a bearer API key the user configures outside this repo. The plugin files contain neither.
+- No hooks. One HTTP MCP server, `https://mcp.phone-harness.com/mcp`, no stdio command and no shell-exec MCP. The CLI path is Grok's own bash tool, which prompts in Ask mode. It is not a tool this plugin registers.
+- Network endpoints: `mcp.phone-harness.com` (MCP and OAuth protected-resource metadata), `clerk.phone-harness.com` (MCP sign-in, and CLI cloud login only if the user chooses that path), and `api.phone-harness.com` from the hosted server or from the CLI. A mirrored iPhone uses no Phone Harness host. Desk Android uses adb on the user's machine.
+- Credentials: OAuth scope `phone:drive` for the hosted MCP, or a bearer API key the user configures outside this repo. CLI cloud uses `phone-harness cloud login` or `PHONE_HARNESS_API_KEY` set by the user. The plugin files contain neither.
 
 ## What was validated here, and what was not
 
