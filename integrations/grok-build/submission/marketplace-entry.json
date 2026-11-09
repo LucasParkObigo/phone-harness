@@ -1,0 +1,24 @@
+{
+  "name": "phone-harness",
+  "description": "Drive a Phone Harness Cloud Android emulator or Cloud iPhone from Grok Build through the hosted Phone Harness MCP server. See the screen, tap, type, and open apps. A personal iPhone and a desk Android are not reachable from this plugin.",
+  "category": "development",
+  "source": {
+    "source": "url",
+    "url": "https://github.com/phone-harness/phone-harness.git",
+    "sha": "071628f0c645dfd3deaeaa9539e1c889f02494ab",
+    "path": "integrations/grok-build"
+  },
+  "homepage": "https://phone-harness.com",
+  "keywords": [
+    "phone harness",
+    "phone-harness",
+    "phone harness cloud",
+    "phone-harness mcp"
+  ],
+  "domains": [
+    "phone-harness.com",
+    "www.phone-harness.com",
+    "mcp.phone-harness.com",
+    "api.phone-harness.com"
+  ]
+}

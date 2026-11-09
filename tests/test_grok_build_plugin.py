@@ -250,7 +250,6 @@ def catalog_errors(entry: dict) -> list[str]:
     return errors
 
 
-@unittest.skipUnless(ENTRY.is_file(), "catalog entry is pinned in a follow-up commit")
 class CatalogEntry(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
